@@ -1,6 +1,6 @@
 from qiskit import QuantumCircuit
 from qiskit.quantum_info import Statevector
-from qiskit
+
 # Create a circuit with 1 qubit
 qc = QuantumCircuit(1)
 
@@ -13,4 +13,4 @@ state = Statevector(qc)
 
 print("Initial State (|0⟩):", state)
 
-display(state.draw(output = "text"))
+print(state.draw(output = "text"))
