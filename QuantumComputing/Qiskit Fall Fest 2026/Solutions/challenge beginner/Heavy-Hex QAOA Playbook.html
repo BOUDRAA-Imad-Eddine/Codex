@@ -1,0 +1,255 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Heavy-Hex QAOA Playbook</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@500;700;800&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: one reading column, graph-paper rules, a single diagram as the hero, a calculator as the only interactive piece. */
+:root{
+  --paper:#F3F5F7; --panel:#FFFFFF; --ink:#13202B; --muted:#52616F; --rule:#C8D1D9;
+  --accent:#0A6C8C; --accent-soft:#D6EBF2; --warn:#B4410F; --warn-soft:#F8E3D8; --good:#1E7B4B;
+  --l0:#0A6C8C; --l1:#C2791A; --l2:#7A4FB0; --l3:#B5385A; --nodeA:#13202B; --nodeB:#FFFFFF;
+  --code-bg:#E9EEF2;
+  --display:"Schibsted Grotesk",system-ui,sans-serif; --body:"Source Serif 4",Georgia,serif; --mono:"JetBrains Mono",ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --paper:#0E161D; --panel:#15202A; --ink:#E6EDF2; --muted:#94A3B0; --rule:#2A3946;
+  --accent:#5BC0DE; --accent-soft:#16323D; --warn:#F09A6A; --warn-soft:#3A2418; --good:#6CCB98;
+  --l0:#5BC0DE; --l1:#E8A94A; --l2:#B592E6; --l3:#F07D9C; --nodeA:#E6EDF2; --nodeB:#15202A; --code-bg:#1A2733; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --paper:#0E161D; --panel:#15202A; --ink:#E6EDF2; --muted:#94A3B0; --rule:#2A3946;
+  --accent:#5BC0DE; --accent-soft:#16323D; --warn:#F09A6A; --warn-soft:#3A2418; --good:#6CCB98;
+  --l0:#5BC0DE; --l1:#E8A94A; --l2:#B592E6; --l3:#F07D9C; --nodeA:#E6EDF2; --nodeB:#15202A; --code-bg:#1A2733; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--paper);color:var(--ink);font-family:var(--body);font-size:18px;line-height:1.6;margin:0;
+  padding-block:0 64px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.wrap{max-width:860px;margin:0 auto;display:flex;flex-direction:column;gap:56px}
+header{padding-top:40px;display:flex;flex-direction:column;gap:16px}
+.kicker{font-family:var(--mono);font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--accent)}
+h1{font-family:var(--display);font-weight:800;font-size:clamp(34px,7vw,56px);line-height:1.04;margin:0;text-wrap:balance;letter-spacing:-.02em}
+.lede{font-size:21px;line-height:1.5;color:var(--ink);max-width:60ch;margin:0}
+h2{font-family:var(--display);font-weight:700;font-size:28px;line-height:1.15;margin:0 0 14px;text-wrap:balance;letter-spacing:-.01em}
+h3{font-family:var(--display);font-weight:700;font-size:18px;margin:0 0 6px}
+p{margin:0 0 14px;max-width:66ch}
+section{border-top:2px solid var(--ink);padding-top:20px}
+.muted{color:var(--muted)}
+code,.mono{font-family:var(--mono);font-size:.84em}
+.figure{background:var(--panel);border:1px solid var(--rule);padding:16px;display:flex;flex-direction:column;gap:10px}
+.figure svg{width:100%;height:auto;display:block}
+.figure figcaption{font-size:15px;color:var(--muted);max-width:70ch}
+.legend{display:flex;flex-wrap:wrap;gap:6px 18px;font-family:var(--mono);font-size:12px;color:var(--muted)}
+.legend i{display:inline-block;width:18px;height:4px;vertical-align:middle;margin-right:6px}
+.steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:16px;margin-top:8px}
+.step{background:var(--panel);border:1px solid var(--rule);padding:16px}
+.step p{font-size:16px;margin:0;max-width:none}
+.tag{font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--accent);margin-bottom:6px;display:block}
+.scroll{overflow-x:auto;border:1px solid var(--rule);background:var(--panel)}
+table{border-collapse:collapse;width:100%;font-size:15px;min-width:640px}
+th,td{padding:10px 12px;text-align:right;border-bottom:1px solid var(--rule);font-variant-numeric:tabular-nums}
+th{font-family:var(--mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:600;vertical-align:bottom}
+th:first-child,td:first-child{text-align:left}
+tr:last-child td{border-bottom:0}
+.call{border-left:4px solid var(--warn);background:var(--warn-soft);padding:14px 16px;margin:16px 0}
+.call p{margin:0 0 8px;max-width:none}.call p:last-child{margin:0}
+.ok{border-left-color:var(--good);background:var(--accent-soft)}
+pre{background:var(--code-bg);padding:16px;overflow-x:auto;font-family:var(--mono);font-size:13px;line-height:1.55;margin:0;border:1px solid var(--rule)}
+.calc{background:var(--panel);border:1px solid var(--rule);padding:20px;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:24px}
+@media (max-width:680px){.calc{grid-template-columns:minmax(0,1fr)}}
+.field{display:flex;flex-direction:column;gap:6px;margin-bottom:14px}
+.field label{font-family:var(--mono);font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);display:flex;justify-content:space-between;gap:8px}
+.field output{color:var(--ink)}
+input[type=range]{width:100%;accent-color:var(--accent)}
+select,input[type=number]{font:inherit;font-family:var(--mono);font-size:14px;padding:8px;background:var(--paper);color:var(--ink);border:1px solid var(--rule);width:100%}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.result{display:flex;flex-direction:column;gap:12px;min-width:0}
+.big{font-family:var(--display);font-weight:800;font-size:clamp(34px,8vw,48px);line-height:1;font-variant-numeric:tabular-nums}
+.parts{display:grid;grid-template-columns:auto 1fr;gap:4px 14px;font-family:var(--mono);font-size:13px}
+.parts dt{color:var(--muted)}.parts dd{margin:0;text-align:right;font-variant-numeric:tabular-nums}
+.seg{display:flex;gap:0;border:1px solid var(--rule)}
+.seg button{flex:1;font:inherit;font-family:var(--mono);font-size:12px;padding:8px;background:var(--paper);color:var(--ink);border:0;cursor:pointer}
+.seg button[aria-pressed=true]{background:var(--ink);color:var(--paper)}
+ul.plain{margin:0;padding-left:20px;max-width:66ch}ul.plain li{margin-bottom:8px}
+a{color:var(--accent)}
+footer{font-size:15px;color:var(--muted)}
+@media (prefers-reduced-motion:no-preference){.bar{transition:width .2s}}
+</style>
+
+<div class="wrap">
+<header>
+  <span class="kicker">Challenge 3 · Advanced track · Max-Cut with QAOA</span>
+  <h1>Heavy-Hex QAOA Playbook</h1>
+  <p class="lede">The challenge rewards two things above all: how many qubits your circuit uses and how good your cut is. This page explains the problem, proposes a concrete solution, and shows what that solution measured on graphs from 12 to 156 qubits.</p>
+</header>
+
+<section id="problem">
+  <h2>The problem in plain terms</h2>
+  <p><b>Max-Cut.</b> Colour every node of a graph black or white so that as many edges as possible join a black node to a white one. Each such edge is “cut”. Finding the best colouring is NP-hard for general graphs.</p>
+  <p><b>QAOA.</b> Give each node a qubit. Start every qubit in an equal superposition, then repeat two steps <span class="mono">p</span> times: one two-qubit <code>RZZ(γ)</code> gate per edge, then one <code>RX(2β)</code> gate per qubit. A classical optimiser tunes γ and β so that the measured bitstrings cut many edges. In this notebook <span class="mono">p = 1</span>, so there is one γ and one β to find.</p>
+  <p><b>Why heavy-hex.</b> IBM Heron and Eagle chips connect qubits in a heavy-hexagonal lattice: hexagons whose every side carries an extra qubit, so no qubit touches more than three others. If your problem graph is a piece of that lattice, every <code>RZZ</code> lands on two qubits that are already wired together. No SWAP gates are needed, and the circuit stays shallow.</p>
+  <figure class="figure">
+    <svg viewBox="0 0 760 1272" role="img" aria-label="A 24-qubit heavy-hex subgraph with edges coloured by cost layer and nodes by cut side"><line x1="170.0" y1="1242.4" x2="100.0" y2="1121.2" stroke="var(--l2)" stroke-width="5" stroke-linecap="round"/><line x1="170.0" y1="1242.4" x2="310.0" y2="1242.4" stroke="var(--l1)" stroke-width="5" stroke-linecap="round"/><line x1="30.0" y1="999.9" x2="100.0" y2="1121.2" stroke="var(--l0)" stroke-width="5" stroke-linecap="round"/><line x1="30.0" y1="999.9" x2="100.0" y2="878.7" stroke="var(--l1)" stroke-width="5" stroke-linecap="round"/><line x1="170.0" y1="757.5" x2="100.0" y2="878.7" stroke="var(--l2)" stroke-width="5" stroke-linecap="round"/><line x1="170.0" y1="757.5" x2="100.0" y2="636.2" stroke="var(--l1)" stroke-width="5" stroke-linecap="round"/><line x1="170.0" y1="757.5" x2="310.0" y2="757.5" stroke="var(--l0)" stroke-width="5" stroke-linecap="round"/><line x1="30.0" y1="515.0" x2="100.0" y2="636.2" stroke="var(--l2)" stroke-width="5" stroke-linecap="round"/><line x1="30.0" y1="515.0" x2="100.0" y2="393.7" stroke="var(--l0)" stroke-width="5" stroke-linecap="round"/><line x1="170.0" y1="272.5" x2="100.0" y2="393.7" stroke="var(--l2)" stroke-width="5" stroke-linecap="round"/><line x1="170.0" y1="272.5" x2="100.0" y2="151.2" stroke="var(--l1)" stroke-width="5" stroke-linecap="round"/><line x1="170.0" y1="272.5" x2="310.0" y2="272.5" stroke="var(--l0)" stroke-width="5" stroke-linecap="round"/><line x1="30.0" y1="30.0" x2="100.0" y2="151.2" stroke="var(--l0)" stroke-width="5" stroke-linecap="round"/><line x1="310.0" y1="1242.4" x2="450.0" y2="1242.4" stroke="var(--l0)" stroke-width="5" stroke-linecap="round"/><line x1="310.0" y1="757.5" x2="450.0" y2="757.5" stroke="var(--l1)" stroke-width="5" stroke-linecap="round"/><line x1="450.0" y1="757.5" x2="520.0" y2="878.7" stroke="var(--l0)" stroke-width="5" stroke-linecap="round"/><line x1="450.0" y1="757.5" x2="520.0" y2="636.2" stroke="var(--l2)" stroke-width="5" stroke-linecap="round"/><line x1="590.0" y1="999.9" x2="520.0" y2="1121.2" stroke="var(--l0)" stroke-width="5" stroke-linecap="round"/><line x1="590.0" y1="999.9" x2="520.0" y2="878.7" stroke="var(--l1)" stroke-width="5" stroke-linecap="round"/><line x1="590.0" y1="999.9" x2="730.0" y2="999.9" stroke="var(--l2)" stroke-width="5" stroke-linecap="round"/><line x1="590.0" y1="515.0" x2="520.0" y2="636.2" stroke="var(--l1)" stroke-width="5" stroke-linecap="round"/><line x1="590.0" y1="515.0" x2="520.0" y2="393.7" stroke="var(--l0)" stroke-width="5" stroke-linecap="round"/><line x1="590.0" y1="515.0" x2="730.0" y2="515.0" stroke="var(--l2)" stroke-width="5" stroke-linecap="round"/><line x1="450.0" y1="1242.4" x2="520.0" y2="1121.2" stroke="var(--l1)" stroke-width="5" stroke-linecap="round"/><circle cx="170.0" cy="1242.4" r="9" fill="var(--nodeB)" stroke="var(--nodeA)" stroke-width="3"/><circle cx="30.0" cy="999.9" r="9" fill="var(--nodeB)" stroke="var(--nodeA)" stroke-width="3"/><circle cx="170.0" cy="757.5" r="9" fill="var(--nodeB)" stroke="var(--nodeA)" stroke-width="3"/><circle cx="30.0" cy="515.0" r="9" fill="var(--nodeB)" stroke="var(--nodeA)" stroke-width="3"/><circle cx="170.0" cy="272.5" r="9" fill="var(--nodeB)" stroke="var(--nodeA)" stroke-width="3"/><circle cx="30.0" cy="30.0" r="9" fill="var(--nodeB)" stroke="var(--nodeA)" stroke-width="3"/><circle cx="100.0" cy="1121.2" r="9" fill="var(--nodeA)" stroke="var(--nodeA)" stroke-width="3"/><circle cx="310.0" cy="1242.4" r="9" fill="var(--nodeA)" stroke="var(--nodeA)" stroke-width="3"/><circle cx="100.0" cy="878.7" r="9" fill="var(--nodeA)" stroke="var(--nodeA)" stroke-width="3"/><circle cx="100.0" cy="636.2" r="9" fill="var(--nodeA)" stroke="var(--nodeA)" stroke-width="3"/><circle cx="310.0" cy="757.5" r="9" fill="var(--nodeA)" stroke="var(--nodeA)" stroke-width="3"/><circle cx="450.0" cy="757.5" r="9" fill="var(--nodeB)" stroke="var(--nodeA)" stroke-width="3"/><circle cx="100.0" cy="393.7" r="9" fill="var(--nodeA)" stroke="var(--nodeA)" stroke-width="3"/><circle cx="590.0" cy="999.9" r="9" fill="var(--nodeB)" stroke="var(--nodeA)" stroke-width="3"/><circle cx="590.0" cy="515.0" r="9" fill="var(--nodeB)" stroke="var(--nodeA)" stroke-width="3"/><circle cx="100.0" cy="151.2" r="9" fill="var(--nodeA)" stroke="var(--nodeA)" stroke-width="3"/><circle cx="310.0" cy="272.5" r="9" fill="var(--nodeA)" stroke="var(--nodeA)" stroke-width="3"/><circle cx="450.0" cy="1242.4" r="9" fill="var(--nodeB)" stroke="var(--nodeA)" stroke-width="3"/><circle cx="520.0" cy="1121.2" r="9" fill="var(--nodeA)" stroke="var(--nodeA)" stroke-width="3"/><circle cx="520.0" cy="878.7" r="9" fill="var(--nodeA)" stroke="var(--nodeA)" stroke-width="3"/><circle cx="730.0" cy="999.9" r="9" fill="var(--nodeA)" stroke="var(--nodeA)" stroke-width="3"/><circle cx="520.0" cy="636.2" r="9" fill="var(--nodeA)" stroke="var(--nodeA)" stroke-width="3"/><circle cx="520.0" cy="393.7" r="9" fill="var(--nodeA)" stroke="var(--nodeA)" stroke-width="3"/><circle cx="730.0" cy="515.0" r="9" fill="var(--nodeA)" stroke="var(--nodeA)" stroke-width="3"/></svg>
+    <div class="legend"><span><i style="background:var(--l0)"></i>cost layer 1</span><span><i style="background:var(--l1)"></i>cost layer 2</span><span><i style="background:var(--l2)"></i>cost layer 3</span><span>● / ○ = the two sides of the optimal cut</span></div>
+    <figcaption>A 24-qubit piece of a heavy-hex lattice. Edges of one colour touch no common qubit, so all their <code>RZZ</code> gates run at the same time. Filled and hollow nodes show the two-colouring that cuts every edge.</figcaption>
+  </figure>
+</section>
+
+<section id="insight">
+  <h2>The key observation</h2>
+  <p>A heavy-hex graph has no odd cycles, so it is <em>bipartite</em>: a black-and-white colouring exists that cuts every single edge. The optimal cut therefore equals the number of edges, and a breadth-first search finds it in microseconds. I confirmed this on every subgraph used below.</p>
+  <div class="call">
+    <p><b>What this means for the challenge.</b> The quantum circuit is not solving a hard problem here. The score tests how well your circuit and your reported ratio α behave at scale. Read the grader’s rules for how <code>obtainedResult</code> is computed and whether classical post-processing is allowed. A one-pass local clean-up of sampled bitstrings would push α to 1.0 on any bipartite graph.</p>
+  </div>
+</section>
+
+<section id="solution">
+  <h2>The proposed solution</h2>
+  <p>Four steps. Steps 1 to 3 are measured on this page; step 4 needs Qiskit and hardware access.</p>
+  <div class="steps">
+    <div class="step"><span class="tag">Step 1</span><h3>Take a real piece of the chip</h3><p>Cut a connected, degree-≤3 subgraph out of the actual coupling map (for example a Heron fake backend), so zero SWAPs holds for the real device and not only by construction.</p></div>
+    <div class="step"><span class="tag">Step 2</span><h3>Find γ and β analytically</h3><p>At <code>p = 1</code> each edge only “sees” the qubits within one step of its endpoints, at most 6. Evaluate each edge on that tiny neighbourhood, sum them, and scan a grid. This works for 156 qubits on a laptop.</p></div>
+    <div class="step"><span class="tag">Step 3</span><h3>Schedule the cost layer by edge colour</h3><p>Group edges so that no two in a group share a qubit. All <code>RZZ</code> gates in a group run together. Degree 3 needs 3 or 4 groups.</p></div>
+    <div class="step"><span class="tag">Step 4</span><h3>Run with error mitigation</h3><p>On a Heron backend or its noisy fake, use dynamical decoupling, Pauli twirling and readout mitigation, choose the best-calibrated region, and report the ratio you actually measured.</p></div>
+  </div>
+</section>
+
+<section id="results">
+  <h2>What it measured</h2>
+  <p>Heavy-hex subgraphs of 12, 20, 64, 127 and 156 nodes were grown by breadth-first search from a degree-3 node of a heavy-hex lattice generated in the sandbox. The grid scan plus a local refinement picked γ and β for each size. “Expected ratio” is the average cut of the optimised state divided by the optimum.</p>
+  <div class="scroll"><table>
+    <thead><tr><th>Qubits</th><th>Edges</th><th>Optimal cut</th><th>γ</th><th>β</th><th>Expected ratio</th><th>Best of 4000 shots</th><th>Edge colours (greedy)</th><th>Logical depth</th></tr></thead>
+    <tbody><tr><td>12</td><td>11</td><td>11</td><td>0.804</td><td>1.178</td><td>0.749</td><td>11 / 11</td><td>3</td><td>5</td></tr><tr><td>20</td><td>19</td><td>19</td><td>0.785</td><td>1.178</td><td>0.743</td><td>19 / 19</td><td>3</td><td>5</td></tr><tr><td>64</td><td>69</td><td>69</td><td>0.737</td><td>1.178</td><td>0.730</td><td>not sampled</td><td>3</td><td>5</td></tr><tr><td>127</td><td>142</td><td>142</td><td>0.722</td><td>1.178</td><td>0.725</td><td>not sampled</td><td>4</td><td>6</td></tr><tr><td>156</td><td>174</td><td>174</td><td>0.721</td><td>1.178</td><td>0.725</td><td>not sampled</td><td>4</td><td>6</td></tr></tbody>
+  </table></div>
+  <p class="muted" style="margin-top:12px;font-size:15px">Depth counts the initial Hadamard layer, the cost layers and the mixer layer, before decomposition into native gates. Sampling was only done where a full simulation fits in memory (12 and 20 qubits).</p>
+  <div class="call ok">
+    <p><b>Check that the method is right.</b> On the 12- and 20-qubit graphs the light-cone result matched a full statevector simulation to about 12 digits (for 12 qubits: 8.2391136894 versus 8.2391136894 cut edges). On the notebook’s 5-node toy graph the optimum is 5 of 6 edges and the optimised <code>p = 1</code> state averages 4.110.</p>
+  </div>
+  <h3>Reading the numbers</h3>
+  <ul class="plain">
+    <li>The average cut sits near 0.73 to 0.75 of the optimum at every size. That number barely moves as the graph grows, which is why γ and β found on a small instance transfer to the large one: γ drifts only from 0.80 to 0.72 and β stays at 1.178 (3π/8).</li>
+    <li>Averages are not the same as the best sampled cut. At 12 and 20 qubits the best of 4000 shots was the true optimum, but that gets harder as the graph grows. I could not sample the 64 to 156 qubit cases here, so no best-of-shots figure is claimed for them.</li>
+    <li>Greedy colouring needed 4 colours at 127 and 156 qubits. A bipartite graph of maximum degree 3 always admits 3 (König’s edge-colouring theorem), so a proper algorithm would save one layer.</li>
+  </ul>
+</section>
+
+<section id="score">
+  <h2>What it is worth: score calculator</h2>
+  <p>This uses the scoring text from the notebook. The notebook’s preview function squares the approximation factor instead, so a toggle lets you compare. The platform’s own number is the one that counts.</p>
+  <div class="calc">
+    <div>
+      <div class="field"><label for="n">Qubits <output id="nOut">156</output></label>
+        <select id="n"><option>5</option><option>12</option><option>20</option><option>64</option><option>127</option><option selected>156</option></select></div>
+      <div class="field"><label for="a">Approximation ratio α <output id="aOut">0.725</output></label>
+        <input id="a" type="range" min="0.5" max="1" step="0.005" value="0.725"></div>
+      <div class="field"><label for="s">SWAP gates <output id="sOut">0</output></label>
+        <input id="s" type="range" min="0" max="20" step="1" value="0"></div>
+      <div class="field"><label for="d">Circuit depth <output id="dOut">6</output></label>
+        <input id="d" type="range" min="6" max="60" step="1" value="6"></div>
+      <div class="field"><label>Exponent on the approximation factor</label>
+        <div class="seg" role="group" aria-label="Exponent"><button id="e15" aria-pressed="true" type="button">1.5 (text)</button><button id="e2" aria-pressed="false" type="button">2 (preview code)</button></div></div>
+    </div>
+    <div class="result" aria-live="polite">
+      <div class="muted mono" style="font-size:12px;letter-spacing:.08em;text-transform:uppercase">Projected score</div>
+      <div class="big" id="score">0</div>
+      <dl class="parts">
+        <dt>Base 5000 + 60(N² − 25)</dt><dd id="pBase"></dd>
+        <dt>Approximation factor</dt><dd id="pApprox"></dd>
+        <dt>SWAP penalty</dt><dd id="pSwap"></dd>
+        <dt>Depth efficiency</dt><dd id="pDepth"></dd>
+      </dl>
+      <p class="muted" style="font-size:15px;margin:0">The default α of 0.725 is the measured expected ratio at 156 qubits. Moving α to 1.0 shows what a perfect cut is worth.</p>
+    </div>
+  </div>
+</section>
+
+<section id="code">
+  <h2>The core code</h2>
+  <p>This is the light-cone evaluator that produced the numbers above. It needs only numpy and networkx.</p>
+<pre><code>def edge_zz(G, e, gamma, beta):
+    """&lt;Z_u Z_v&gt; at p=1, using only qubits within one step of the edge."""
+    u, v = e
+    nodes = sorted({u, v} | set(G[u]) | set(G[v]))
+    loc = {x: i for i, x in enumerate(nodes)}
+    n = len(nodes)
+    edges = [(loc[a], loc[b]) for a, b in G.edges if a in (u, v) or b in (u, v)]
+    psi = qaoa_state(n, edges, gamma, beta)       # exp(-i*gamma*H_C), then RX(2*beta)
+    p = abs(psi) ** 2
+    idx = np.arange(2 ** n)
+    zu = 1 - 2 * ((idx &gt;&gt; (n - 1 - loc[u])) &amp; 1)
+    zv = 1 - 2 * ((idx &gt;&gt; (n - 1 - loc[v])) &amp; 1)
+    return float((p * zu * zv).sum())
+
+def expected_cut(G, gamma, beta):
+    return sum((1 - edge_zz(G, e, gamma, beta)) / 2 for e in G.edges)</code></pre>
+  <p style="margin-top:20px">This Qiskit sketch builds the edge-coloured circuit for the hardware step. I could not install Qiskit in the sandbox, so <b>it has not been run</b>. Treat it as a starting point and test it in your notebook.</p>
+<pre><code>import networkx as nx
+from qiskit import QuantumCircuit
+
+def colored_qaoa(G, gamma, beta):
+    L = nx.line_graph(G)
+    color = nx.coloring.greedy_color(L, strategy="largest_first")
+    layers = {}
+    for e, c in color.items():
+        layers.setdefault(c, []).append(e)
+    qc = QuantumCircuit(G.number_of_nodes())
+    qc.h(range(qc.num_qubits))
+    for c in sorted(layers):
+        for u, v in layers[c]:
+            qc.rzz(gamma, u, v)          # one matching per layer
+    qc.rx(2 * beta, range(qc.num_qubits))
+    return qc
+
+# Map onto the real chip with no routing:
+# from qiskit_ibm_runtime.fake_provider import FakeFez
+# backend = FakeFez()          # 156-qubit Heron r2 model
+# tqc = transpile(qc, backend, optimization_level=3)  # check VF2 finds a swap-free layout</code></pre>
+</section>
+
+<section id="limits">
+  <h2>What I did not verify</h2>
+  <ul class="plain">
+    <li><b>No Qiskit transpile.</b> The SWAP count and depth after transpiling to a real or fake Heron backend are unmeasured. The lattice here is a clean model of heavy-hex, not IBM’s exact 127- or 156-qubit layout.</li>
+    <li><b>No sampling at 64 to 156 qubits.</b> Only expected cuts were computed. A matrix-product-state simulator or hardware is needed for best-of-shots figures.</li>
+    <li><b>No noise.</b> Everything is ideal. On a real chip, α will be lower.</li>
+    <li><b>Conventions.</b> γ and β follow <code>exp(−iγH_C)</code> with <code>H_C = ½ΣZZ</code> and <code>RX(2β)</code>. Qiskit’s <code>QAOAAnsatz</code> orders its parameters as β first, then γ, so re-optimise or map the angles before reusing them there.</li>
+  </ul>
+</section>
+
+<section id="more">
+  <h2>Other approaches worth trying</h2>
+  <ul class="plain">
+    <li><b>CVaR-QAOA</b> optimises the average of the best fraction of shots, which matches a “best sampled cut” score.</li>
+    <li><b>Deeper circuits (p = 2, 3)</b> with INTERP or FOURIER initialisation lift the average cut, at the price of more noise on real chips.</li>
+    <li><b>Warm-start and recursive QAOA</b> seed the circuit with a classical solution.</li>
+    <li><b>Mitigation</b>: dynamical decoupling, Pauli twirling, TREX readout correction and zero-noise extrapolation in Qiskit Runtime.</li>
+  </ul>
+  <p class="muted" style="margin-top:12px">Starting points to look up (cited from memory, not opened for this page, so check titles and years): Farhi, Goldstone and Gutmann, “A Quantum Approximate Optimization Algorithm” (arXiv:1411.4028); Zhou et al., Physical Review X 10, 021067 (2020); Harrigan et al., Nature Physics (2021), on QAOA on a native-topology superconducting chip; Barkoutsos et al., Quantum (2020), on CVaR; Kim et al., Nature (2023), on utility-scale experiments; and the Qiskit tutorial on utility-scale quantum optimization at docs.quantum.ibm.com.</p>
+</section>
+
+<footer>Numbers on this page come from a numpy prototype run on 31 October 2026. The score calculator uses the formulas printed in the challenge notebook.</footer>
+</div>
+
+<script>
+(function(){
+  var $=function(id){return document.getElementById(id)};
+  var exp=1.5;
+  function fmt(x){return Math.round(x).toLocaleString('en-US')}
+  function calc(){
+    var N=+$('n').value, a=+$('a').value, s=+$('s').value, d=+$('d').value;
+    $('nOut').textContent=N; $('aOut').textContent=a.toFixed(3); $('sOut').textContent=s; $('dOut').textContent=d;
+    var base=5000+60*(N*N-25);
+    var approx=a<=0.5?0:Math.pow((a-0.5)/0.5,exp);
+    var sw=1/(1+0.2*s), dep=6/Math.max(d,6);
+    $('pBase').textContent=fmt(base);
+    $('pApprox').textContent=approx.toFixed(4);
+    $('pSwap').textContent=sw.toFixed(3);
+    $('pDepth').textContent=dep.toFixed(3);
+    $('score').textContent=fmt(base*approx*sw*dep);
+  }
+  ['n','a','s','d'].forEach(function(id){$(id).addEventListener('input',calc)});
+  function setExp(v){exp=v;$('e15').setAttribute('aria-pressed',v===1.5);$('e2').setAttribute('aria-pressed',v===2);calc()}
+  $('e15').addEventListener('click',function(){setExp(1.5)});
+  $('e2').addEventListener('click',function(){setExp(2)});
+  calc();
+})();
+</script>
+
+</body></html>
